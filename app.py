@@ -1,9 +1,8 @@
 import streamlit as st
 import pandas as pd
 import joblib
-import numpy as np
 
-# Load model and data
+# Load model
 @st.cache_resource
 def load_model():
     return joblib.load("sales_model.pkl")
@@ -11,36 +10,54 @@ def load_model():
 model = load_model()
 
 st.title("💰 Sales Revenue Predictor")
-st.write("My First ML Project - Predict Revenue")
+st.markdown("**Sales Analysis Dashboard**")
 
-# Sidebar inputs
-st.sidebar.header("Input Features")
+st.sidebar.header("Input Sales Details")
 
-# Product selection (update with your actual products)
+# Inputs
 product = st.sidebar.selectbox("Product", [
-    "iPhone 13 Case", "Tecno Spark 20 Case", "Samsung A35 Case", 
-    "Redmi Note 14 Case", "Infinix Hot 40 Case", "Unknown"
+    "iPhone 13 Case", "Tecno Spark 20 Case", "Samsung A35 Case",
+    "Redmi Note 14 Case", "Infinix Hot 40 Case", "Power Bank",
+    "Earbuds", "Screen Protector", "Unknown"
 ])
 
 city = st.sidebar.selectbox("City", ["Nairobi", "Mombasa", "Nakuru", "Eldoret", "Unknown"])
 
-quantity = st.sidebar.number_input("Quantity", min_value=1, value=2)
-unit_price = st.sidebar.number_input("Unit Price", min_value=100, value=1200)
+quantity = st.sidebar.number_input("Quantity", min_value=1, value=2, step=1)
+unit_price = st.sidebar.number_input("Unit Price (KES)", min_value=100, value=1200, step=50)
 
-if st.sidebar.button("🔮 Predict Revenue"):
-    # Create input dataframe
+if st.sidebar.button("🔮 Predict Revenue", type="primary"):
+    # Prepare input data
     input_data = pd.DataFrame({
         "Quantity": [quantity],
         "Unit_Price": [unit_price],
-        # Add dummy variables for products and cities (simplified)
+        "Order_ID": [100000]  # dummy
     })
-    
-    # For simplicity - calculate directly (you can improve this later)
-    predicted_revenue = quantity * unit_price
-    
-    st.success(f"**Predicted Revenue: KES {predicted_revenue:,.0f}**")
-    
-    st.info("Note: This is a basic version. The full model is saved in sales_model.pkl")
 
+    # One-hot encoding for Product and City
+    products = ["Product_" + p for p in [
+        "iPhone 13 Case", "Tecno Spark 20 Case", "Samsung A35 Case",
+        "Redmi Note 14 Case", "Infinix Hot 40 Case", "Power Bank",
+        "Earbuds", "Screen Protector"
+    ]]
+    cities = ["City_" + c for c in ["Nairobi", "Mombasa", "Nakuru", "Eldoret"]]
+
+    for col in products + cities:
+        input_data[col] = 0
+
+    # Set selected values
+    if "Product_" + product in input_data.columns:
+        input_data["Product_" + product] = 1
+    if "City_" + city in input_data.columns:
+        input_data["City_" + city] = 1
+
+    # Predict
+    prediction = model.predict(input_data)[0]
+
+    st.success(f"**Predicted Revenue: KES {prediction:,.0f}**")
+    st.balloons()
+
+# Show model info
 st.write("---")
-st.write("Project by Carolyn Endinda")
+st.caption("Model trained with Random Forest Regressor")
+st.caption("Project by Carolynendinda")
