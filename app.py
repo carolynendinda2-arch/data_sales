@@ -79,4 +79,4 @@ with col2:
     except:
         pass
 
-st.caption("Project by Carolyn Endinda")
+st.caption("Project by Carolyne Ndinda")
