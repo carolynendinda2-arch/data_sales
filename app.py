@@ -1,15 +1,74 @@
 import streamlit as st
+import pandas as pd
+import joblib
+from PIL import Image
+
+# Load model
+@st.cache_resource
+def load_model():
+    return joblib.load("sales_model.pkl")
+
+model = load_model()
 
 st.title("💰 Sales Revenue Predictor")
-st.write("**My Sales Analysis Project**")
+st.markdown("### Phone Accessories Sales Analysis")
 
-st.success("App is working! 🚀")
+# Tabs
+tab1, tab2, tab3 = st.tabs(["🔮 Predict", "📊 Model Insights", "ℹ️ About"])
 
-quantity = st.number_input("Quantity", min_value=1, value=2)
-unit_price = st.number_input("Unit Price (KES)", min_value=100, value=1200)
+with tab1:
+    st.sidebar.header("Input Sales Details")
+    
+    product = st.sidebar.selectbox("Product", [
+        "iPhone 13 Case", "Tecno Spark 20 Case", "Samsung A35 Case", 
+        "Redmi Note 14 Case", "Infinix Hot 40 Case", "Power Bank", 
+        "Earbuds", "Screen Protector", "Unknown"
+    ])
+    
+    city = st.sidebar.selectbox("City", ["Nairobi", "Mombasa", "Nakuru", "Eldoret", "Unknown"])
+    
+    quantity = st.sidebar.number_input("Quantity", min_value=1, value=3, step=1)
+    unit_price = st.sidebar.number_input("Unit Price (KES)", min_value=100, value=1200, step=50)
 
-if st.button("Calculate Revenue"):
-    revenue = quantity * unit_price
-    st.success(f"**Predicted Revenue: KES {revenue:,.0f}**")
+    if st.sidebar.button("🔮 Predict Revenue", type="primary"):
+        input_data = pd.DataFrame({
+            "Quantity": [quantity],
+            "Unit_Price": [unit_price],
+            "Order_ID": [100000]
+        })
+        
+        products = ["Product_" + p for p in [
+            "iPhone 13 Case", "Tecno Spark 20 Case", "Samsung A35 Case", 
+            "Redmi Note 14 Case", "Infinix Hot 40 Case", "Power Bank", 
+            "Earbuds", "Screen Protector"
+        ]]
+        cities = ["City_" + c for c in ["Nairobi", "Mombasa", "Nakuru", "Eldoret"]]
+        
+        for col in products + cities:
+            input_data[col] = 0
+        
+        if "Product_" + product in input_data.columns:
+            input_data["Product_" + product] = 1
+        if "City_" + city in input_data.columns:
+            input_data["City_" + city] = 1
+        
+        prediction = model.predict(input_data)[0]
+        st.success(f"**Predicted Revenue: KES {prediction:,.0f}**")
+        st.balloons()
+
+with tab2:
+    st.subheader("Model Performance")
+    try:
+        col1, col2 = st.columns(2)
+        with col1:
+            st.image("actual_vs_predicted.png", caption="Actual vs Predicted Revenue")
+        with col2:
+            st.image("feature_importance.png", caption="Top Feature Importance")
+    except:
+        st.warning("Graphs not found. Make sure the images are in the repository.")
+
+with tab3:
+    st.write("This is a Machine Learning project that predicts sales revenue.")
+    st.caption("Built with Random Forest Regressor")
 
 st.caption("Project by Carolyn Endinda")
